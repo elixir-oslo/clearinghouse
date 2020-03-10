@@ -32,6 +32,9 @@ public enum Clearinghouse {
     private static final String JWKS_URI = "jwks_uri";
     private static final String GA_4_GH_PASSPORT_V_1 = "ga4gh_passport_v1";
     private static final String GA_4_GH_VISA_V_1 = "ga4gh_visa_v1";
+    private static final String USERINFO = "userinfo";
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String BEARER = "Bearer ";
 
     /**
      * Validates visa JWT token and converts it to <code>Visa</code> POJO.
@@ -139,8 +142,8 @@ public enum Clearinghouse {
     public List<String> getVisaTokensWithPublicKey(String accessToken, RSAPublicKey publicKey) {
         var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         var issuer = verifier.verify(accessToken).getIssuer();
-        var userInfoEndpoint = issuer + "userinfo";
-        var userInfo = Unirest.get(userInfoEndpoint).header("Authorization", "Bearer " + accessToken).asJson();
+        var userInfoEndpoint = issuer + USERINFO;
+        var userInfo = Unirest.get(userInfoEndpoint).header(AUTHORIZATION, BEARER + accessToken).asJson();
         var passport = userInfo.getBody().getObject().getJSONArray(GA_4_GH_PASSPORT_V_1);
         return passport.toList();
     }
