@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v1
+
+      - name: Set up JDK 13
+        uses: actions/setup-java@v1
+        with:
+          java-version: 13
+
+      - name: Deploy artifact with Maven
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p ~/.m2
+          echo "<?xml version='1.0' encoding='UTF-8' ?> <settings xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd' xmlns='http://maven.apache.org/SETTINGS/1.0.0' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'> <servers> <server> <id>bintray-elixir-oslo-clearinghouse</id> <username>dtitov</username> <password>${{ secrets.MAVEN_TOKEN }}</password> </server> </servers> </settings>" > ~/.m2/settings.xml
+          mvn javadoc:javadoc
+          mvn deploy
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Publish Javadocs
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: target/site/apidocs
