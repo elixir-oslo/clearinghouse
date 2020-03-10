@@ -6,12 +6,12 @@ import com.auth0.jwk.SigningKeyNotFoundException;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.gson.Gson;
+import kong.unirest.Unirest;
+import kong.unirest.json.JSONArray;
+import kong.unirest.json.JSONObject;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,7 +30,7 @@ public enum JWKProvider {
         return cache.get(new ImmutablePair<>(url, keyId));
     }
 
-    private Jwk getInternal(Pair<String, String> urlAndId) throws JwkException, IOException {
+    private Jwk getInternal(Pair<String, String> urlAndId) throws JwkException {
         var url = urlAndId.getKey();
         var keyId = urlAndId.getValue();
         return getAll(url)
@@ -41,12 +41,15 @@ public enum JWKProvider {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Jwk> getAll(String url) throws IOException {
-        try (InputStreamReader reader = new InputStreamReader(new URL(url).openStream())) {
-            var content = gson.fromJson(reader, Map.class);
-            var keys = (List<Map<String, Object>>) content.get(KEYS);
-            return keys.stream().map(Jwk::fromValues).collect(Collectors.toList());
-        }
+    private List<Jwk> getAll(String url) {
+        JSONObject body = Unirest.get(url).asJson().getBody().getObject();
+        JSONArray keysArray = body.getJSONArray(KEYS);
+        return (List<Jwk>) keysArray
+                .toList()
+                .stream()
+                .map(k -> gson.fromJson(k.toString(), Map.class))
+                .map(k -> Jwk.fromValues((Map<String, Object>) k))
+                .collect(Collectors.toList());
     }
 
 }
