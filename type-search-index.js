@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"no.uio.ifi.clearinghouse.model","l":"ByValue"},{"p":"no.uio.ifi.clearinghouse","l":"Clearinghouse"},{"p":"no.uio.ifi.clearinghouse","l":"JWKProvider"},{"p":"no.uio.ifi.clearinghouse.model","l":"Visa"},{"p":"no.uio.ifi.clearinghouse.model","l":"VisaType"}]
