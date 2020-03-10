@@ -18,7 +18,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Main class of the library, encapsulating TSD File API client methods.
+ * Singleton class to to be used for getting visa JWT tokens provided access JWT token
+ * and for converting visa JWT tokens to <code>Visa</code> POJOs.
  */
 @Slf4j
 public enum Clearinghouse {
@@ -32,6 +33,13 @@ public enum Clearinghouse {
     private static final String GA_4_GH_PASSPORT_V_1 = "ga4gh_passport_v1";
     private static final String GA_4_GH_VISA_V_1 = "ga4gh_visa_v1";
 
+    /**
+     * Validates visa JWT token and converts it to <code>Visa</code> POJO.
+     * Token is validated based on JKU.
+     *
+     * @param visaToken Visa JWT token.
+     * @return Optional <code>Visa</code> POJO: present if token validated successfully.
+     */
     public Optional<Visa> getVisa(String visaToken) {
         var decodedToken = JWT.decode(visaToken);
         var jku = decodedToken.getHeaderClaim(JKU).asString();
@@ -45,6 +53,14 @@ public enum Clearinghouse {
         }
     }
 
+    /**
+     * Validates visa JWT token and converts it to <code>Visa</code> POJO.
+     * Token is validated based on PEM RSA public key provided.
+     *
+     * @param visaToken    Visa JWT token.
+     * @param pemPublicKey PEM RSA public key.
+     * @return Optional <code>Visa</code> POJO: present if token validated successfully.
+     */
     public Optional<Visa> getVisaWithPEMPublicKey(String visaToken, String pemPublicKey) {
         try {
             return getVisaWithPublicKey(visaToken, readPEMKey(pemPublicKey));
@@ -54,6 +70,14 @@ public enum Clearinghouse {
         }
     }
 
+    /**
+     * Validates visa JWT token and converts it to <code>Visa</code> POJO.
+     * Token is validated based on RSA public key provided.
+     *
+     * @param visaToken Visa JWT token.
+     * @param publicKey RSA public key.
+     * @return Optional <code>Visa</code> POJO: present if token validated successfully.
+     */
     public Optional<Visa> getVisaWithPublicKey(String visaToken, RSAPublicKey publicKey) {
         var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         try {
@@ -64,6 +88,14 @@ public enum Clearinghouse {
         }
     }
 
+    /**
+     * Validates access JWT token and returns a list of visa JWT tokens from "/userinfo" endpoint.
+     * Access token is validated based on JWKs URL of the OpenID configuration.
+     *
+     * @param accessToken            Access JWT token.
+     * @param openIDConfigurationURL ".well-known/openid-configuration" full URL.
+     * @return List of visa JWT tokens.
+     */
     public List<String> getVisaTokens(String accessToken, String openIDConfigurationURL) {
         var openIDConfiguration = Unirest.get(openIDConfigurationURL).asJson();
         var jwksURL = openIDConfiguration.getBody().getObject().getString(JWKS_URI);
@@ -78,6 +110,14 @@ public enum Clearinghouse {
         }
     }
 
+    /**
+     * Validates access JWT token and returns a list of visa JWT tokens from "/userinfo" endpoint.
+     * Access token is validated based on PEM RSA public key provided.
+     *
+     * @param accessToken  Access JWT token.
+     * @param pemPublicKey PEM RSA public key.
+     * @return List of visa JWT tokens.
+     */
     public List<String> getVisaTokensWithPEMPublicKey(String accessToken, String pemPublicKey) {
         try {
             return getVisaTokensWithPublicKey(accessToken, readPEMKey(pemPublicKey));
@@ -87,6 +127,14 @@ public enum Clearinghouse {
         }
     }
 
+    /**
+     * Validates access JWT token and returns a list of visa JWT tokens from "/userinfo" endpoint.
+     * Access token is validated based on RSA public key provided.
+     *
+     * @param accessToken Access JWT token.
+     * @param publicKey   RSA public key.
+     * @return List of visa JWT tokens.
+     */
     @SuppressWarnings("unchecked")
     public List<String> getVisaTokensWithPublicKey(String accessToken, RSAPublicKey publicKey) {
         var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();

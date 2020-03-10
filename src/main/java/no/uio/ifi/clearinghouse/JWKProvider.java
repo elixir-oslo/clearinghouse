@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Singleton class to be used for retrieving keys from JKU entry of JWT header.
+ */
 public enum JWKProvider {
 
     INSTANCE;
@@ -26,6 +29,14 @@ public enum JWKProvider {
 
     private LoadingCache<Pair<String, String>, Jwk> cache = Caffeine.newBuilder().maximumSize(100).build(this::getInternal);
 
+    /**
+     * Returns <code>Jwk</code> instance containing RSA Public Key with specified ID, fetched from specified URL.
+     * The implementation uses cache.
+     *
+     * @param url   JKU URL to fetch key from.
+     * @param keyId Key ID.
+     * @return <code>Jwk</code> instance.
+     */
     public synchronized Jwk get(String url, String keyId) {
         return cache.get(new ImmutablePair<>(url, keyId));
     }

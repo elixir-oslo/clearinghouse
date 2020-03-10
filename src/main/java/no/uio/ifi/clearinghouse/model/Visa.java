@@ -8,6 +8,9 @@ import lombok.ToString;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * POJO representing Crypt4GH visa.
+ */
 @Data
 @ToString
 @NoArgsConstructor
