@@ -15,10 +15,9 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 @RunWith(PowerMockRunner.class)
@@ -36,8 +35,42 @@ public class ClearinghouseTests {
         BDDMockito.given(Unirest.get("https://login.elixir-czech.org/oidc/userinfo")).willReturn(new GetRequestStub(passport));
     }
 
+    @SneakyThrows
     @Test
-    public void getVisaTest() throws IOException {
+    public void getVisasTest() {
+        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisas(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
+        Assert.assertEquals(1, visas.size());
+        Visa visa = visas.iterator().next();
+        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assert.assertEquals("affiliate@google.com", visa.getValue());
+        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assert.assertNull(visa.getConditions());
+        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+
+    }
+
+    @SneakyThrows
+    @Test
+    public void getVisasWithPEMPublicKeyTestTest() {
+        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
+        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
+        Assert.assertEquals(1, visas.size());
+        Visa visa = visas.iterator().next();
+        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assert.assertEquals("affiliate@google.com", visa.getValue());
+        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assert.assertNull(visa.getConditions());
+        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+
+    }
+
+    @SneakyThrows
+    @Test
+    public void getVisaTest() {
         String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
         Assert.assertTrue(optionalVisa.isPresent());
@@ -70,8 +103,8 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisaTokensTest() {
-        String accessToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
-        List<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
+        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
         Assert.assertEquals(1, visaTokens.size());
         String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
         Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
@@ -80,9 +113,9 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisaTokensWithPEMPublicKeyTest() {
-        String accessToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
+        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
         String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
-        List<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPEMPublicKey(accessToken, publicKey);
+        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPEMPublicKey(accessToken, publicKey);
         Assert.assertEquals(1, visaTokens.size());
         String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
         Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");

@@ -13,9 +13,10 @@ import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Singleton class to to be used for getting visa JWT tokens provided access JWT token
@@ -35,6 +36,60 @@ public enum Clearinghouse {
     private static final String USERINFO = "userinfo";
     private static final String AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer ";
+
+    /**
+     * Validates access JWT token and returns a list of Visas obtained from "/userinfo" endpoint.
+     * Access token is validated based on JWKs URL of the OpenID configuration.
+     * Visa tokens are validated based on JKUs.
+     *
+     * @param accessToken            Access JWT token.
+     * @param openIDConfigurationURL ".well-known/openid-configuration" full URL.
+     * @return List of GA4GH Visas.
+     */
+    public Collection<Visa> getVisas(String accessToken, String openIDConfigurationURL) {
+        return getVisaTokens(accessToken, openIDConfigurationURL)
+                .stream()
+                .map(this::getVisa)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Validates access JWT token and returns a list of Visas obtained from "/userinfo" endpoint.
+     * Access token is validated based on PEM RSA public key provided.
+     * Visa tokens are validated based on JKUs.
+     *
+     * @param accessToken  Access JWT token.
+     * @param pemPublicKey PEM RSA public key.
+     * @return List of GA4GH Visas.
+     */
+    public Collection<Visa> getVisasWithPEMPublicKey(String accessToken, String pemPublicKey) {
+        return getVisaTokensWithPEMPublicKey(accessToken, pemPublicKey)
+                .stream()
+                .map(this::getVisa)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Validates access JWT token and returns a list of Visas obtained from "/userinfo" endpoint.
+     * Access token is validated based on RSA public key provided.
+     * Visa tokens are validated based on JKUs.
+     *
+     * @param accessToken Access JWT token.
+     * @param publicKey   RSA public key.
+     * @return List of GA4GH Visas.
+     */
+    public Collection<Visa> getVisasWithPublicKey(String accessToken, RSAPublicKey publicKey) {
+        return getVisaTokensWithPublicKey(accessToken, publicKey)
+                .stream()
+                .map(this::getVisa)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
 
     /**
      * Validates visa JWT token and converts it to <code>Visa</code> POJO.
@@ -99,7 +154,7 @@ public enum Clearinghouse {
      * @param openIDConfigurationURL ".well-known/openid-configuration" full URL.
      * @return List of visa JWT tokens.
      */
-    public List<String> getVisaTokens(String accessToken, String openIDConfigurationURL) {
+    public Collection<String> getVisaTokens(String accessToken, String openIDConfigurationURL) {
         var openIDConfiguration = Unirest.get(openIDConfigurationURL).asJson();
         var jwksURL = openIDConfiguration.getBody().getObject().getString(JWKS_URI);
         var decodedToken = JWT.decode(accessToken);
@@ -121,7 +176,7 @@ public enum Clearinghouse {
      * @param pemPublicKey PEM RSA public key.
      * @return List of visa JWT tokens.
      */
-    public List<String> getVisaTokensWithPEMPublicKey(String accessToken, String pemPublicKey) {
+    public Collection<String> getVisaTokensWithPEMPublicKey(String accessToken, String pemPublicKey) {
         try {
             return getVisaTokensWithPublicKey(accessToken, readPEMKey(pemPublicKey));
         } catch (GeneralSecurityException e) {
@@ -139,7 +194,7 @@ public enum Clearinghouse {
      * @return List of visa JWT tokens.
      */
     @SuppressWarnings("unchecked")
-    public List<String> getVisaTokensWithPublicKey(String accessToken, RSAPublicKey publicKey) {
+    public Collection<String> getVisaTokensWithPublicKey(String accessToken, RSAPublicKey publicKey) {
         var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         var issuer = verifier.verify(accessToken).getIssuer();
         var userInfoEndpoint = issuer + USERINFO;
