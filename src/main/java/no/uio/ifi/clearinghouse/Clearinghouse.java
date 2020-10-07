@@ -203,6 +203,20 @@ public enum Clearinghouse {
         return passport.toList();
     }
 
+    /**
+     * Returns a list of visa JWT tokens from "/userinfo" endpoint provided the opaque access token.
+     *
+     * @param accessToken      Opaque access token.
+     * @param userInfoEndpoint "/userinfo" endpoint URL.
+     * @return List of visa JWT tokens.
+     */
+    @SuppressWarnings("unchecked")
+    public Collection<String> getVisaTokensFromOpaqueToken(String accessToken, String userInfoEndpoint) {
+        var userInfo = Unirest.get(userInfoEndpoint).header(AUTHORIZATION, BEARER + accessToken).asJson();
+        var passport = userInfo.getBody().getObject().getJSONArray(GA_4_GH_PASSPORT_V_1);
+        return passport.toList();
+    }
+
     private RSAPublicKey readPEMKey(String publicKey) throws GeneralSecurityException {
         KeyFactory keyFactory = KeyFactory.getInstance(RSA);
         publicKey = publicKey.replaceAll(KEY_WRAPPING, "").replace(System.lineSeparator(), "").replace(" ", "").trim();

@@ -121,4 +121,14 @@ public class ClearinghouseTests {
         Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
     }
 
+    @SneakyThrows
+    @Test
+    public void getVisaTokensFromOpaqueTokenTest() {
+        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensFromOpaqueToken(accessToken, "https://login.elixir-czech.org/oidc/userinfo");
+        Assert.assertEquals(1, visaTokens.size());
+        String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
+        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+    }
+
 }
