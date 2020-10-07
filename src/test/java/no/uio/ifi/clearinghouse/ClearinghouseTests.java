@@ -42,6 +42,7 @@ public class ClearinghouseTests {
         Collection<Visa> visas = Clearinghouse.INSTANCE.getVisas(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
         Assert.assertEquals(1, visas.size());
         Visa visa = visas.iterator().next();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
         Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
         Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
         Assert.assertEquals("affiliate@google.com", visa.getValue());
@@ -59,6 +60,7 @@ public class ClearinghouseTests {
         Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
         Assert.assertEquals(1, visas.size());
         Visa visa = visas.iterator().next();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
         Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
         Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
         Assert.assertEquals("affiliate@google.com", visa.getValue());
@@ -75,6 +77,7 @@ public class ClearinghouseTests {
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
         Assert.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
         Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
         Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
         Assert.assertEquals("affiliate@google.com", visa.getValue());
@@ -92,6 +95,7 @@ public class ClearinghouseTests {
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisaWithPEMPublicKey(visaToken, publicKey);
         Assert.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
         Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
         Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
         Assert.assertEquals("affiliate@google.com", visa.getValue());

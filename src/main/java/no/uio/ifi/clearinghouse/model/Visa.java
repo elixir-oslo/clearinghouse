@@ -16,6 +16,8 @@ import java.util.Map;
 @NoArgsConstructor
 public class Visa {
 
+    private String sub;                         // JWT subject
+
     @NonNull
     private String type;                        // passport visa type
 
