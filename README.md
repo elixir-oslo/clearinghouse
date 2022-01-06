@@ -22,9 +22,9 @@ To include this library to your Maven project add following to the `pom.xml`:
 
     <repositories>
         <repository>
-            <id>central</id>
-            <name>bintray</name>
-            <url>http://jcenter.bintray.com</url>
+            <id>github</id>
+            <name>elixir-oslo-clearinghouse</name>
+            <url>https://maven.pkg.github.com/elixir-oslo/clearinghouse</url>
         </repository>
     </repositories>
 
