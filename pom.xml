@@ -161,9 +161,9 @@
 
     <distributionManagement>
         <repository>
-            <id>bintray-elixir-oslo-clearinghouse</id>
+            <id>github</id>
             <name>elixir-oslo-clearinghouse</name>
-            <url>https://api.bintray.com/maven/elixir-oslo/clearinghouse/clearinghouse/;publish=1</url>
+            <url>https://maven.pkg.github.com/elixir-oslo/clearinghouse</url>
         </repository>
     </distributionManagement>
 
