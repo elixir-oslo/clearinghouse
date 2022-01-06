@@ -20,6 +20,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           java-version: '13'
+          distribution: 'adopt'
 
       - name: Publish package
         run: mvn --batch-mode deploy
