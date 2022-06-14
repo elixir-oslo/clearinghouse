@@ -15,19 +15,18 @@ jobs:
 
       - uses: actions/checkout@v1
 
-      - name: Set up JDK 13
+      - name: Set up JDK 17
         uses: actions/setup-java@v1
         with:
-          java-version: 13
+          distribution: zulu
+          java-version: 17
 
       - name: Deploy artifact with Maven
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p ~/.m2
-          echo "<?xml version='1.0' encoding='UTF-8' ?> <settings xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd' xmlns='http://maven.apache.org/SETTINGS/1.0.0' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'> <servers> <server> <id>bintray-elixir-oslo-clearinghouse</id> <username>dtitov</username> <password>${{ secrets.MAVEN_TOKEN }}</password> </server> </servers> </settings>" > ~/.m2/settings.xml
           mvn javadoc:javadoc
-          mvn deploy
+          mvn --batch-mode deploy
 
       - name: Create release
         id: create_release
