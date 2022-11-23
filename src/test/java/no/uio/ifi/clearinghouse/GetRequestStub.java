@@ -3,6 +3,8 @@ package no.uio.ifi.clearinghouse;
 import kong.unirest.*;
 
 import java.io.File;
+import java.nio.file.CopyOption;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -11,12 +13,11 @@ import java.util.function.Function;
 
 public class GetRequestStub implements GetRequest {
 
-    private String json;
+    private final String json;
 
     public GetRequestStub(String json) {
         this.json = json;
     }
-
     @Override
     public GetRequest routeParam(String name, String value) {
         return null;
@@ -58,12 +59,22 @@ public class GetRequestStub implements GetRequest {
     }
 
     @Override
+    public GetRequest headersReplace(Map<String, String> map) {
+        return null;
+    }
+
+    @Override
     public GetRequest cookie(String name, String value) {
         return null;
     }
 
     @Override
     public GetRequest cookie(Cookie cookie) {
+        return null;
+    }
+
+    @Override
+    public GetRequest cookie(Collection<Cookie> collection) {
         return null;
     }
 
@@ -193,17 +204,17 @@ public class GetRequestStub implements GetRequest {
     }
 
     @Override
-    public HttpResponse<File> asFile(String path) {
+    public HttpResponse<File> asFile(String s, CopyOption... copyOptions) {
         return null;
     }
 
     @Override
-    public CompletableFuture<HttpResponse<File>> asFileAsync(String path) {
+    public CompletableFuture<HttpResponse<File>> asFileAsync(String path, CopyOption... copyOptions) {
         return null;
     }
 
     @Override
-    public CompletableFuture<HttpResponse<File>> asFileAsync(String path, Callback<File> callback) {
+    public CompletableFuture<HttpResponse<File>> asFileAsync(String path, Callback<File> callback, CopyOption... copyOptions) {
         return null;
     }
 
@@ -269,6 +280,11 @@ public class GetRequestStub implements GetRequest {
 
     @Override
     public HttpRequestSummary toSummary() {
+        return null;
+    }
+
+    @Override
+    public Instant getCreationTime() {
         return null;
     }
 
