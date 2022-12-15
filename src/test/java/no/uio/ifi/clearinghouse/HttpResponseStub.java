@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 public class HttpResponseStub implements HttpResponse<JsonNode> {
 
-    private String json;
+    private final String json;
 
     public HttpResponseStub(String json) {
         this.json = json;
@@ -78,5 +78,8 @@ public class HttpResponseStub implements HttpResponse<JsonNode> {
     public Cookies getCookies() {
         return null;
     }
+
+    @Override
+    public HttpRequestSummary getRequestSummary() { return null; }
 
 }

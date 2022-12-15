@@ -7,6 +7,7 @@ import java.nio.file.CopyOption;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -18,6 +19,7 @@ public class GetRequestStub implements GetRequest {
     public GetRequestStub(String json) {
         this.json = json;
     }
+
     @Override
     public GetRequest routeParam(String name, String value) {
         return null;
@@ -112,6 +114,9 @@ public class GetRequestStub implements GetRequest {
     public GetRequest proxy(String host, int port) {
         return null;
     }
+
+    @Override
+    public GetRequest proxy(Proxy proxy) { return null; }
 
     @Override
     public GetRequest downloadMonitor(ProgressMonitor monitor) {
@@ -261,6 +266,11 @@ public class GetRequestStub implements GetRequest {
     @Override
     public Headers getHeaders() {
         return null;
+    }
+
+    @Override
+    public Optional<Body> getBody() {
+        return GetRequest.super.getBody();
     }
 
     @Override
