@@ -26,8 +26,6 @@ import java.util.Optional;
 public class ClearinghouseTests {
 
     private MockWebServer mockWebServer;
-    private String passport;
-    private String jwk;
     private String publicKey;
     private String accessToken;
     private String visaToken;
@@ -39,8 +37,8 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Before
     public void init() {
-        passport = Files.readString(Path.of("src/test/resources/passport.json"));
-        jwk = Files.readString(Path.of("src/test/resources/jwk.json"));
+        String passport = Files.readString(Path.of("src/test/resources/passport.json"));
+        String jwk = Files.readString(Path.of("src/test/resources/jwk.json"));
 
         // Mock-webserver to create custom responses
         mockWebServer = new MockWebServer();
