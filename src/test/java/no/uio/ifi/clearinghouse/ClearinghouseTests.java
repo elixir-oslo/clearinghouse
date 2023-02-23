@@ -19,6 +19,7 @@ import org.junit.runners.JUnit4;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -26,6 +27,7 @@ import java.util.Optional;
 public class ClearinghouseTests {
 
     private MockWebServer mockWebServer;
+    private CredentialsProvider credentialsProvider;
     private String publicKey;
     private String accessToken;
     private String visaToken;
@@ -37,11 +39,22 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Before
     public void init() {
-        String passport = Files.readString(Path.of("src/test/resources/passport.json"));
-        String jwk = Files.readString(Path.of("src/test/resources/jwk.json"));
+        mockWebServer = new MockWebServer();
+        mockWebServer.start();
+
+        jwkEndPoint = mockWebServer.url("/jwk");
+        userInfoEndpoint = mockWebServer.url("/userinfo");
+        baseUrl = mockWebServer.url("/").toString();
+
+        // generate credentials
+        credentialsProvider = new CredentialsProvider(baseUrl);
+        accessToken = credentialsProvider.getAccessToken();
+        visaToken = credentialsProvider.getVisaToken();
+        String jwk = credentialsProvider.getJwkJsonString();
+        String passport = credentialsProvider.getPassportJsonString();
+        publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
 
         // Mock-webserver to create custom responses
-        mockWebServer = new MockWebServer();
         MockResponse passportResponse = new MockResponse().setResponseCode(200).setBody(passport);
         mockWebServer.enqueue(passportResponse);
         MockResponse jwkResponse = new MockResponse().setResponseCode(200).setBody(jwk);
@@ -62,20 +75,6 @@ public class ClearinghouseTests {
             }
         };
         mockWebServer.setDispatcher(dispatcher);
-        mockWebServer.start();
-
-        jwkEndPoint = mockWebServer.url("/jwk");
-        userInfoEndpoint = mockWebServer.url("/userinfo");
-        baseUrl = mockWebServer.url("/").toString();
-
-        // generate credentials
-        CredentialsProvider credentialsProvider = new CredentialsProvider(baseUrl);
-        accessToken = credentialsProvider.getAccessToken();
-        publicKey = credentialsProvider.getPublicKeyString();
-        visaToken = credentialsProvider.getVisaToken();
-
-//        System.out.println("Access Token -->\n" + accessToken);
-//        System.out.println("\nVisa Token -->\n" + visaToken);
     }
 
     @After
@@ -105,8 +104,8 @@ public class ClearinghouseTests {
 //    @SneakyThrows
 //    @Test
 //    public void getVisasWithPEMPublicKeyTestTest() {
-//        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
-//        String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
+//        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+//        //String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
 //        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
 //        Assert.assertEquals(1, visas.size());
 //        Visa visa = visas.iterator().next();
@@ -122,7 +121,7 @@ public class ClearinghouseTests {
 //    @SneakyThrows
 //    @Test
 //    public void getVisaTest() {
-//        String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
+//        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
 //        Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
 //        Assert.assertTrue(optionalVisa.isPresent());
 //        Visa visa = optionalVisa.get();
@@ -138,8 +137,6 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisaWithPEMPublicKeyTest() {
-        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
-        //String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisaWithPEMPublicKey(visaToken, publicKey);
         Assert.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
@@ -155,34 +152,35 @@ public class ClearinghouseTests {
 //    @SneakyThrows
 //    @Test
 //    public void getVisaTokensTest() {
-//        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+//        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
 //        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
 //        Assert.assertEquals(1, visaTokens.size());
-//        String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
-//        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
-//    }
-
-//    @SneakyThrows
-//    @Test
-//    public void getVisaTokensWithPEMPublicKeyTest() {
-//        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
-//        String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
-//        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPEMPublicKey(accessToken, publicKey);
-//        Assert.assertEquals(1, visaTokens.size());
-//        String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
+//        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
 //        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
 //    }
 
     @SneakyThrows
     @Test
-    public void getVisaTokensFromOpaqueTokenTest() {
+    public void getVisaTokensWithPEMPublicKeyTest() {
+        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPEMPublicKey(accessToken, publicKey);
+        Assert.assertEquals(1, visaTokens.size());
+        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+    }
 
-        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+    @SneakyThrows
+    @Test
+    public void getVisaTokensFromOpaqueTokenTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensFromOpaqueToken(accessToken,
                 userInfoEndpoint.toString());
         Assert.assertEquals(1, visaTokens.size());
-        String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
         Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+    }
+
+    @Test
+    public void getVisaTokensWithPublicKeyTest() {
+        RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
+        var visa = Clearinghouse.INSTANCE.getVisaTokensWithPublicKey(accessToken, publicKey);
+        Assert.assertEquals(visaToken, visa.iterator().next() + "\n");
     }
 
 }
