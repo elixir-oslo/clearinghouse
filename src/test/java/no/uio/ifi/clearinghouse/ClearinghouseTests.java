@@ -179,8 +179,23 @@ public class ClearinghouseTests {
     @Test
     public void getVisaTokensWithPublicKeyTest() {
         RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
-        var visa = Clearinghouse.INSTANCE.getVisaTokensWithPublicKey(accessToken, publicKey);
-        Assert.assertEquals(visaToken, visa.iterator().next() + "\n");
+        var visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPublicKey(accessToken, publicKey);
+        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+    }
+
+    @Test
+    public void getVisaWithPublicKeyTest() {
+        RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
+        var optionalVisa = Clearinghouse.INSTANCE.getVisaWithPublicKey(visaToken,publicKey);
+        Assert.assertTrue(optionalVisa.isPresent());
+        Visa visa = optionalVisa.get();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assert.assertEquals("affiliate@google.com", visa.getValue());
+        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assert.assertNull(visa.getConditions());
+        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 
 }
