@@ -63,7 +63,7 @@ public class CredentialsProvider {
         visa.setSource("https://login.elixir-czech.org/google-idp/");
         visa.setValue("affiliate@google.com");
         return Jwts.builder()
-                .setHeaderParam("jku", "https://login.elixir-czech.org/oidc/jwk")
+                .setHeaderParam("jku", url + "jwk")
                 .setHeaderParam("kid", "rsa1")
                 .setHeaderParam("typ", "JWT")
                 .setHeaderParam("alg", "RS256")
