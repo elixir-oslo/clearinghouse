@@ -56,7 +56,6 @@ public class CredentialsProvider {
 
     private String createVisaToken(String url) {
         Visa visa = new Visa();
-        visa.setSub("test@elixir-europe.org");
         visa.setBy("system");
         visa.setType("AffiliationAndRole");
         visa.setAsserted(1583757401L);
