@@ -32,9 +32,7 @@ public class ClearinghouseTests {
     private String accessToken;
     private String visaToken;
 
-    private HttpUrl jwkEndPoint;
     private HttpUrl userInfoEndpoint;
-    private String baseUrl;
     private HttpUrl oidcConfigEndpoint;
 
     @SneakyThrows
@@ -43,8 +41,8 @@ public class ClearinghouseTests {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
-        baseUrl = mockWebServer.url("/").toString();
-        jwkEndPoint = mockWebServer.url("/jwk");
+        String baseUrl = mockWebServer.url("/").toString();
+        HttpUrl jwkEndPoint = mockWebServer.url("/jwk");
         userInfoEndpoint = mockWebServer.url("/userinfo");
         oidcConfigEndpoint = mockWebServer.url("/config");
 
@@ -52,7 +50,6 @@ public class ClearinghouseTests {
         credentialsProvider = new CredentialsProvider(baseUrl);
         accessToken = credentialsProvider.getAccessToken();
         visaToken = credentialsProvider.getVisaToken();
-        //String jwk = credentialsProvider.getJwkJsonString();
         String jwk = Files.readString(Path.of("src/test/resources/jwk.json"));
         String passport = credentialsProvider.getPassportJsonString();
         publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
@@ -93,7 +90,6 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisasTest() {
-        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
         Collection<Visa> visas = Clearinghouse.INSTANCE.getVisas(accessToken, oidcConfigEndpoint.toString());
         Assert.assertEquals(1, visas.size());
         Visa visa = visas.iterator().next();
@@ -110,8 +106,6 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisasWithPEMPublicKeyTestTest() {
-        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
-        //String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
         Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
         Assert.assertEquals(1, visas.size());
         Visa visa = visas.iterator().next();
@@ -127,7 +121,6 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisaTest() {
-        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
         Assert.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
@@ -158,10 +151,8 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisaTokensTest() {
-        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, oidcConfigEndpoint.toString());
         Assert.assertEquals(1, visaTokens.size());
-        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
         Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
     }
 
