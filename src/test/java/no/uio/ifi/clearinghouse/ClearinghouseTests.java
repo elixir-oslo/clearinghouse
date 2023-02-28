@@ -90,23 +90,22 @@ public class ClearinghouseTests {
     }
 
 
+    @SneakyThrows
+    @Test
+    public void getVisasTest() {
+        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisas(accessToken, oidcConfigEndpoint.toString());
+        Assert.assertEquals(1, visas.size());
+        Visa visa = visas.iterator().next();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assert.assertEquals("affiliate@google.com", visa.getValue());
+        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assert.assertNull(visa.getConditions());
+        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
 
-//    @SneakyThrows
-//    @Test
-//    public void getVisasTest() {
-//        String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
-//        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisas(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
-//        Assert.assertEquals(1, visas.size());
-//        Visa visa = visas.iterator().next();
-//        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-//        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-//        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-//        Assert.assertEquals("affiliate@google.com", visa.getValue());
-//        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-//        Assert.assertNull(visa.getConditions());
-//        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
-//
-//    }
+    }
 
     @SneakyThrows
     @Test
@@ -156,15 +155,15 @@ public class ClearinghouseTests {
         Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 
-//    @SneakyThrows
-//    @Test
-//    public void getVisaTokensTest() {
-//        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
-//        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, "https://login.elixir-czech.org/oidc/.well-known/openid-configuration");
-//        Assert.assertEquals(1, visaTokens.size());
-//        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
-//        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
-//    }
+    @SneakyThrows
+    @Test
+    public void getVisaTokensTest() {
+        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, oidcConfigEndpoint.toString());
+        Assert.assertEquals(1, visaTokens.size());
+        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
+        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+    }
 
     @SneakyThrows
     @Test
@@ -177,8 +176,7 @@ public class ClearinghouseTests {
     @SneakyThrows
     @Test
     public void getVisaTokensFromOpaqueTokenTest() {
-        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensFromOpaqueToken(accessToken,
-                userInfoEndpoint.toString());
+        Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensFromOpaqueToken(accessToken, userInfoEndpoint.toString());
         Assert.assertEquals(1, visaTokens.size());
         Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
     }
@@ -193,7 +191,7 @@ public class ClearinghouseTests {
     @Test
     public void getVisaWithPublicKeyTest() {
         RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
-        var optionalVisa = Clearinghouse.INSTANCE.getVisaWithPublicKey(visaToken,publicKey);
+        var optionalVisa = Clearinghouse.INSTANCE.getVisaWithPublicKey(visaToken, publicKey);
         Assert.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
         Assert.assertEquals("test@elixir-europe.org", visa.getSub());
