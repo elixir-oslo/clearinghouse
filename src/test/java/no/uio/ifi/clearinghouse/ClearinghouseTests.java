@@ -50,7 +50,8 @@ public class ClearinghouseTests {
         credentialsProvider = new CredentialsProvider(baseUrl);
         accessToken = credentialsProvider.getAccessToken();
         visaToken = credentialsProvider.getVisaToken();
-        String jwk = credentialsProvider.getJwkJsonString();
+        //String jwk = credentialsProvider.getJwkJsonString();
+        String jwk = Files.readString(Path.of("src/test/resources/jwk.json"));
         String passport = credentialsProvider.getPassportJsonString();
         publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
 
@@ -118,21 +119,21 @@ public class ClearinghouseTests {
 //        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
 //    }
 
-//    @SneakyThrows
-//    @Test
-//    public void getVisaTest() {
-//        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
-//        Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
-//        Assert.assertTrue(optionalVisa.isPresent());
-//        Visa visa = optionalVisa.get();
-//        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-//        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-//        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-//        Assert.assertEquals("affiliate@google.com", visa.getValue());
-//        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-//        Assert.assertNull(visa.getConditions());
-//        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
-//    }
+    @SneakyThrows
+    @Test
+    public void getVisaTest() {
+        //String visaToken = Files.readString(Path.of("src/test/resources/visa.jwt"));
+        Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
+        Assert.assertTrue(optionalVisa.isPresent());
+        Visa visa = optionalVisa.get();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assert.assertEquals("affiliate@google.com", visa.getValue());
+        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assert.assertNull(visa.getConditions());
+        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+    }
 
     @SneakyThrows
     @Test
