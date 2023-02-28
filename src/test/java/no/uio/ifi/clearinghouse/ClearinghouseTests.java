@@ -35,6 +35,7 @@ public class ClearinghouseTests {
     private HttpUrl jwkEndPoint;
     private HttpUrl userInfoEndpoint;
     private String baseUrl;
+    private HttpUrl oidcConfigEndpoint;
 
     @SneakyThrows
     @Before
@@ -42,9 +43,10 @@ public class ClearinghouseTests {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
+        baseUrl = mockWebServer.url("/").toString();
         jwkEndPoint = mockWebServer.url("/jwk");
         userInfoEndpoint = mockWebServer.url("/userinfo");
-        baseUrl = mockWebServer.url("/").toString();
+        oidcConfigEndpoint = mockWebServer.url("/config");
 
         // generate credentials
         credentialsProvider = new CredentialsProvider(baseUrl);
@@ -54,12 +56,16 @@ public class ClearinghouseTests {
         String jwk = Files.readString(Path.of("src/test/resources/jwk.json"));
         String passport = credentialsProvider.getPassportJsonString();
         publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
+        String config = Files.readString(Path.of("src/test/resources/oidcConfig.json"))
+                .replace("https://login.elixir-czech.org/oidc/jwk", jwkEndPoint.toString());
 
         // Mock-webserver to create custom responses
         MockResponse passportResponse = new MockResponse().setResponseCode(200).setBody(passport);
         mockWebServer.enqueue(passportResponse);
         MockResponse jwkResponse = new MockResponse().setResponseCode(200).setBody(jwk);
         mockWebServer.enqueue(jwkResponse);
+        MockResponse configResponse = new MockResponse().setResponseCode(200).setBody(config);
+        mockWebServer.enqueue(configResponse);
 
         // Map response to end-points
         Dispatcher dispatcher = new Dispatcher() {
