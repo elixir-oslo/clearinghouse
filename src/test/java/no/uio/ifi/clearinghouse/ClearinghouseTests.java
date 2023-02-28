@@ -67,12 +67,12 @@ public class ClearinghouseTests {
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 assert request.getPath() != null;
-                if (request.getPath().equals("/userinfo")) {
-                    return passportResponse;
-                } else if (request.getPath().equals("/jwk")) {
-                    return jwkResponse;
-                }
-                return new MockResponse().setResponseCode(404);
+                return switch (request.getPath()) {
+                    case "/userinfo" -> passportResponse;
+                    case "/jwk" -> jwkResponse;
+                    case "/config" -> configResponse;
+                    default -> new MockResponse().setResponseCode(404);
+                };
             }
         };
         mockWebServer.setDispatcher(dispatcher);
