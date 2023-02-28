@@ -102,22 +102,22 @@ public class ClearinghouseTests {
 //
 //    }
 
-//    @SneakyThrows
-//    @Test
-//    public void getVisasWithPEMPublicKeyTestTest() {
-//        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
-//        //String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
-//        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
-//        Assert.assertEquals(1, visas.size());
-//        Visa visa = visas.iterator().next();
-//        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-//        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-//        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-//        Assert.assertEquals("affiliate@google.com", visa.getValue());
-//        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-//        Assert.assertNull(visa.getConditions());
-//        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
-//    }
+    @SneakyThrows
+    @Test
+    public void getVisasWithPEMPublicKeyTestTest() {
+        //String accessToken = Files.readString(Path.of("src/test/resources/access-token.jwt"));
+        //String publicKey = Files.readString(Path.of("src/test/resources/public.pem"));
+        Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
+        Assert.assertEquals(1, visas.size());
+        Visa visa = visas.iterator().next();
+        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assert.assertEquals("affiliate@google.com", visa.getValue());
+        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assert.assertNull(visa.getConditions());
+        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+    }
 
     @SneakyThrows
     @Test
