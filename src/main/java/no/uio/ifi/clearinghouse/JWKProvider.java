@@ -6,12 +6,15 @@ import com.auth0.jwk.SigningKeyNotFoundException;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.gson.Gson;
-import kong.unirest.Unirest;
-import kong.unirest.json.JSONArray;
-import kong.unirest.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.ResponseBody;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 public enum JWKProvider {
 
     INSTANCE;
+
+    private final OkHttpClient client = new OkHttpClient();
 
     private static final String KEYS = "keys";
 
@@ -53,10 +58,21 @@ public enum JWKProvider {
 
     @SuppressWarnings("unchecked")
     private List<Jwk> getAll(String url) {
-        JSONObject body = Unirest.get(url).asJson().getBody().getObject();
-        JSONArray keysArray = body.getJSONArray(KEYS);
+        // JSONObject body = Unirest.get(url).asJson().getBody().getObject();
+        // JSONArray keysArray = body.getJSONArray(KEYS);
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        JsonArray keysArray;
+        try {
+            ResponseBody body = client.newCall(request).execute().body();
+            keysArray = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(KEYS);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return (List<Jwk>) keysArray
-                .toList()
+                .asList()
                 .stream()
                 .map(k -> gson.fromJson(k.toString(), Map.class))
                 .map(k -> Jwk.fromValues((Map<String, Object>) k))

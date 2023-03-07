@@ -5,10 +5,16 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import kong.unirest.Unirest;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import no.uio.ifi.clearinghouse.model.Visa;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.ResponseBody;
+import okio.ByteString;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
@@ -20,7 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Singleton class to to be used for getting visa JWT tokens provided access JWT token
+ * Singleton class to be used for getting visa JWT tokens provided access JWT token
  * and for converting visa JWT tokens to <code>Visa</code> POJOs.
  */
 @Slf4j
@@ -37,6 +43,11 @@ public enum Clearinghouse {
     private static final String USERINFO = "userinfo";
     private static final String AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer ";
+
+    private final OkHttpClient client = new OkHttpClient();
+
+    private final Gson gson = new Gson();
+
 
     /**
      * Validates access JWT token and returns a list of Visas obtained from "/userinfo" endpoint.
@@ -161,16 +172,24 @@ public enum Clearinghouse {
      * @return List of visa JWT tokens.
      */
     public Collection<String> getVisaTokens(String accessToken, String openIDConfigurationURL) {
-        var openIDConfiguration = Unirest.get(openIDConfigurationURL).asJson();
-        var jwksURL = openIDConfiguration.getBody().getObject().getString(JWKS_URI);
-        var decodedToken = JWT.decode(accessToken);
-        var keyId = decodedToken.getKeyId();
-        var jwk = JWKProvider.INSTANCE.get(jwksURL, keyId);
+        Request request = new Request.Builder()
+                .url(openIDConfigurationURL)
+                .get()
+                .build();
+
         try {
+            ResponseBody body = client.newCall(request).execute().body();
+            var jwksURL = gson.fromJson(body.string(), JsonObject.class).get(JWKS_URI).getAsString();
+            var decodedToken = JWT.decode(accessToken);
+            var keyId = decodedToken.getKeyId();
+            var jwk = JWKProvider.INSTANCE.get(jwksURL, keyId);
+
             return getVisaTokensWithPublicKey(accessToken, (RSAPublicKey) jwk.getPublicKey());
         } catch (InvalidPublicKeyException e) {
             log.error(e.getMessage(), e);
             return Collections.emptyList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -204,9 +223,19 @@ public enum Clearinghouse {
         var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         var issuer = verifier.verify(accessToken).getIssuer();
         var userInfoEndpoint = issuer + USERINFO;
-        var userInfo = Unirest.get(userInfoEndpoint).header(AUTHORIZATION, BEARER + accessToken).asJson();
-        var passport = userInfo.getBody().getObject().getJSONArray(GA_4_GH_PASSPORT_V_1);
-        return passport.toList();
+        Request request = new Request.Builder()
+                .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
+                .url(userInfoEndpoint)
+                .get()
+                .build();
+
+        try {
+            ResponseBody body = client.newCall(request).execute().body();
+            var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
+            return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -218,9 +247,19 @@ public enum Clearinghouse {
      */
     @SuppressWarnings("unchecked")
     public Collection<String> getVisaTokensFromOpaqueToken(String accessToken, String userInfoEndpoint) {
-        var userInfo = Unirest.get(userInfoEndpoint).header(AUTHORIZATION, BEARER + accessToken).asJson();
-        var passport = userInfo.getBody().getObject().getJSONArray(GA_4_GH_PASSPORT_V_1);
-        return passport.toList();
+        Request request = new Request.Builder()
+                .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
+                .url(userInfoEndpoint)
+                .get()
+                .build();
+
+        try {
+            ResponseBody body = client.newCall(request).execute().body();
+            var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
+            return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private RSAPublicKey readPEMKey(String publicKey) throws GeneralSecurityException {
