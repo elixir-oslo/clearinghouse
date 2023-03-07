@@ -4,6 +4,7 @@ import com.auth0.jwk.InvalidPublicKeyException;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.Claim;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
@@ -150,13 +151,16 @@ public enum Clearinghouse {
     public Optional<Visa> getVisaWithPublicKey(String visaToken, RSAPublicKey publicKey) {
         var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         try {
-            Visa visa = verifier.verify(visaToken).getClaim(GA_4_GH_VISA_V_1).as(Visa.class);
-            visa.setSub(JWT.decode(visaToken).getSubject());
-            return Optional.of(visa);
+            Claim visaClaim = verifier.verify(visaToken).getClaim(GA_4_GH_VISA_V_1);
+            if (!visaClaim.isNull()) {
+                Visa visa = visaClaim.as(Visa.class);
+                visa.setSub(JWT.decode(visaToken).getSubject());
+                return Optional.of(visa);
+            }
         } catch (JWTVerificationException e) {
             log.error(e.getMessage(), e);
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 
     /**
