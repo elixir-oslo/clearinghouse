@@ -3,10 +3,13 @@ package no.uio.ifi.clearinghouse;
 import com.auth0.jwk.InvalidPublicKeyException;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.Claim;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import no.uio.ifi.clearinghouse.model.Visa;
 import okhttp3.OkHttpClient;
@@ -17,6 +20,7 @@ import okio.ByteString;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -149,16 +153,26 @@ public enum Clearinghouse {
      * @return Optional <code>Visa</code> POJO: present if token validated successfully.
      */
     public Optional<Visa> getVisaWithPublicKey(String visaToken, RSAPublicKey publicKey) {
-        var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         try {
-            Claim visaClaim = verifier.verify(visaToken).getClaim(GA_4_GH_VISA_V_1);
-            if (!visaClaim.isNull()) {
-                Visa visa = visaClaim.as(Visa.class);
-                visa.setSub(JWT.decode(visaToken).getSubject());
+            byte[] encoded = publicKey.getEncoded();
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+            Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(visaToken);
+            Claims claims = jws.getBody();
+            if (claims.containsKey(GA_4_GH_VISA_V_1)) {
+                String visaJson = new Gson().toJson(claims.get(GA_4_GH_VISA_V_1));
+                Visa visa = new Gson().fromJson(visaJson, Visa.class);
+                visa.setSub(jws.getBody().getSubject());
                 return Optional.of(visa);
             }
-        } catch (JWTVerificationException e) {
-            log.error(e.getMessage(), e);
+        } catch (SignatureException e) {
+            log.error("Invalid signature in visa token", e);
+        } catch (JsonSyntaxException e) {
+            log.error("Invalid JSON syntax in visa claim", e);
+        } catch (Exception e) {
+            log.error("Error parsing or verifying visa token", e);
         }
         return Optional.empty();
     }
