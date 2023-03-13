@@ -127,7 +127,7 @@ public class CredentialsProvider {
                 "  \"keys\": [\n" +
                 "    {\n" +
                 "      \"kty\": \"RSA\",\n" +
-                "      \"e\": \"AQAB\",\n" +
+                "      \"e\":"+ publicKey.getPublicExponent().toString(16) +",\n" +
                 "      \"kid\": \"rsa1\",\n" +
                 "      \"n\": \"" + publicKey.getModulus().toString(16) + "\"\n" +
                 "    }\n" +
