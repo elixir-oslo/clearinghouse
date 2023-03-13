@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 import java.util.Date;
 
 public class CredentialsProvider {
@@ -95,6 +96,19 @@ public class CredentialsProvider {
         }
     }
 
+    private String toPEM(PrivateKey privateKey) {
+        String encoded = Base64.getEncoder().encodeToString(privateKey.getEncoded());
+        StringBuilder pem = new StringBuilder();
+        pem.append("-----BEGIN PRIVATE KEY-----\n");
+        int len = encoded.length();
+        for (int i = 0; i < len; i += 64) {
+            pem.append(encoded, i, Math.min(len, i + 64));
+            pem.append("\n");
+        }
+        pem.append("-----END PRIVATE KEY-----\n");
+        return pem.toString();
+    }
+
     // create passport.json w/ the newly generated visaToken
 
     private String createPassportJsonString() {
@@ -125,9 +139,6 @@ public class CredentialsProvider {
         return this.publicKey;
     }
 
-    public PrivateKey getPrivateKey() {
-        return this.privateKey;
-    }
 
     public String getAccessToken() {
         return this.accessToken;
@@ -139,10 +150,6 @@ public class CredentialsProvider {
 
     public String getPassportJsonString() {
         return this.passportJsonString;
-    }
-
-    public String getJwkJsonString() {
-        return jwkJsonString;
     }
 
 }
