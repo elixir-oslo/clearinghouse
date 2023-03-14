@@ -272,7 +272,6 @@ public enum Clearinghouse {
      * @param userInfoEndpoint "/userinfo" endpoint URL.
      * @return List of visa JWT tokens.
      */
-    @SuppressWarnings("unchecked")
     public Collection<String> getVisaTokensFromOpaqueToken(String accessToken, String userInfoEndpoint) {
         Request request = new Request.Builder()
                 .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
