@@ -1,7 +1,5 @@
 package no.uio.ifi.clearinghouse;
 
-import com.auth0.jwk.InvalidPublicKeyException;
-import com.auth0.jwt.JWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
@@ -119,7 +117,7 @@ public enum Clearinghouse {
         var jwk = JWKProvider.INSTANCE.get(jku, keyId);
         try {
             return getVisaWithPublicKey(visaToken, (RSAPublicKey) jwk.getPublicKey());
-        } catch (InvalidPublicKeyException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             return Optional.empty();
         }
@@ -191,17 +189,20 @@ public enum Clearinghouse {
 
         try {
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             var jwksURL = gson.fromJson(body.string(), JsonObject.class).get(JWKS_URI).getAsString();
-            var decodedToken = JWT.decode(accessToken);
-            var keyId = decodedToken.getKeyId();
+            var tokenArray = accessToken.split("[.]");
+            var token = tokenArray[0] + "."  + tokenArray[1] + ".";
+            var decodedToken = Jwts.parserBuilder().build().parseClaimsJwt(token);
+            var keyId = decodedToken.getHeader().get("kid").toString();
             var jwk = JWKProvider.INSTANCE.get(jwksURL, keyId);
 
             return getVisaTokensWithPublicKey(accessToken, (RSAPublicKey) jwk.getPublicKey());
-        } catch (InvalidPublicKeyException e) {
-            log.error(e.getMessage(), e);
-            return Collections.emptyList();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 
