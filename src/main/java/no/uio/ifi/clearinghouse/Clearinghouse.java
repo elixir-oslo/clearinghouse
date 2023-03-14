@@ -282,6 +282,7 @@ public enum Clearinghouse {
 
         try {
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
             return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
         } catch (IOException e) {
