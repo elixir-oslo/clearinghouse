@@ -262,7 +262,7 @@ public enum Clearinghouse {
             log.error("Error parsing or verifying visa token", e);
         }
 
-        return List.of("");
+        return Collections.emptyList();
     }
 
     /**
