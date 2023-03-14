@@ -111,9 +111,11 @@ public enum Clearinghouse {
      * @return Optional <code>Visa</code> POJO: present if token validated successfully.
      */
     public Optional<Visa> getVisa(String visaToken) {
-        var decodedToken = JWT.decode(visaToken);
-        var jku = decodedToken.getHeaderClaim(JKU).asString();
-        var keyId = decodedToken.getKeyId();
+        var tokenArray = visaToken.split("[.]");
+        var token = tokenArray[0] + "."  + tokenArray[1] + ".";
+        var jwt = Jwts.parserBuilder().build().parseClaimsJwt(token);
+        var jku = jwt.getHeader().get(JKU).toString();
+        var keyId = jwt.getHeader().get("kid").toString();
         var jwk = JWKProvider.INSTANCE.get(jku, keyId);
         try {
             return getVisaWithPublicKey(visaToken, (RSAPublicKey) jwk.getPublicKey());
