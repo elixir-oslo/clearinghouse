@@ -2,7 +2,6 @@ package no.uio.ifi.clearinghouse;
 
 import com.auth0.jwk.InvalidPublicKeyException;
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
@@ -23,10 +22,7 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -232,24 +228,38 @@ public enum Clearinghouse {
      * @param publicKey   RSA public key.
      * @return List of visa JWT tokens.
      */
-    @SuppressWarnings("unchecked")
     public Collection<String> getVisaTokensWithPublicKey(String accessToken, RSAPublicKey publicKey) {
-        var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
-        var issuer = verifier.verify(accessToken).getIssuer();
-        var userInfoEndpoint = issuer + USERINFO;
-        Request request = new Request.Builder()
-                .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
-                .url(userInfoEndpoint)
-                .get()
-                .build();
-
         try {
+            byte[] encoded = publicKey.getEncoded();
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+            Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(accessToken);
+            String userInfoEndpoint = jws.getBody().getIssuer() + USERINFO;
+            Request request = new Request.Builder()
+                    .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
+                    .url(userInfoEndpoint)
+                    .get()
+                    .build();
+
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
+
             return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
+
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (SignatureException e) {
+            log.error("Invalid signature in visa token", e);
+        } catch (JsonSyntaxException e) {
+            log.error("Invalid JSON syntax in visa claim", e);
+        } catch (Exception e) {
+            log.error("Error parsing or verifying visa token", e);
         }
+
+        return List.of("");
     }
 
     /**
