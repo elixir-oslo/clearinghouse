@@ -30,9 +30,9 @@ public enum JWKProvider {
 
     private static final String KEYS = "keys";
 
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
 
-    private LoadingCache<Pair<String, String>, Jwk> cache = Caffeine.newBuilder().maximumSize(100).build(this::getInternal);
+    private final LoadingCache<Pair<String, String>, Jwk> cache = Caffeine.newBuilder().maximumSize(100).build(this::getInternal);
 
     /**
      * Returns <code>Jwk</code> instance containing RSA Public Key with specified ID, fetched from specified URL.
@@ -58,8 +58,6 @@ public enum JWKProvider {
 
     @SuppressWarnings("unchecked")
     private List<Jwk> getAll(String url) {
-        // JSONObject body = Unirest.get(url).asJson().getBody().getObject();
-        // JSONArray keysArray = body.getJSONArray(KEYS);
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -67,11 +65,12 @@ public enum JWKProvider {
         JsonArray keysArray;
         try {
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             keysArray = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(KEYS);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return (List<Jwk>) keysArray
+        return keysArray
                 .asList()
                 .stream()
                 .map(k -> gson.fromJson(k.toString(), Map.class))

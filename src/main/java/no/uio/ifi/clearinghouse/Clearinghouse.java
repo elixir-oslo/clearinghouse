@@ -1,12 +1,12 @@
 package no.uio.ifi.clearinghouse;
 
-import com.auth0.jwk.InvalidPublicKeyException;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.Claim;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import no.uio.ifi.clearinghouse.model.Visa;
 import okhttp3.OkHttpClient;
@@ -17,12 +17,10 @@ import okio.ByteString;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -111,13 +109,15 @@ public enum Clearinghouse {
      * @return Optional <code>Visa</code> POJO: present if token validated successfully.
      */
     public Optional<Visa> getVisa(String visaToken) {
-        var decodedToken = JWT.decode(visaToken);
-        var jku = decodedToken.getHeaderClaim(JKU).asString();
-        var keyId = decodedToken.getKeyId();
+        var tokenArray = visaToken.split("[.]");
+        var token = tokenArray[0] + "."  + tokenArray[1] + ".";
+        var jwt = Jwts.parserBuilder().build().parseClaimsJwt(token);
+        var jku = jwt.getHeader().get(JKU).toString();
+        var keyId = jwt.getHeader().get("kid").toString();
         var jwk = JWKProvider.INSTANCE.get(jku, keyId);
         try {
             return getVisaWithPublicKey(visaToken, (RSAPublicKey) jwk.getPublicKey());
-        } catch (InvalidPublicKeyException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             return Optional.empty();
         }
@@ -149,16 +149,26 @@ public enum Clearinghouse {
      * @return Optional <code>Visa</code> POJO: present if token validated successfully.
      */
     public Optional<Visa> getVisaWithPublicKey(String visaToken, RSAPublicKey publicKey) {
-        var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
         try {
-            Claim visaClaim = verifier.verify(visaToken).getClaim(GA_4_GH_VISA_V_1);
-            if (!visaClaim.isNull()) {
-                Visa visa = visaClaim.as(Visa.class);
-                visa.setSub(JWT.decode(visaToken).getSubject());
+            byte[] encoded = publicKey.getEncoded();
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+            Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(visaToken);
+            Claims claims = jws.getBody();
+            if (claims.containsKey(GA_4_GH_VISA_V_1)) {
+                String visaJson = new Gson().toJson(claims.get(GA_4_GH_VISA_V_1));
+                Visa visa = new Gson().fromJson(visaJson, Visa.class);
+                visa.setSub(jws.getBody().getSubject());
                 return Optional.of(visa);
             }
-        } catch (JWTVerificationException e) {
-            log.error(e.getMessage(), e);
+        } catch (SignatureException e) {
+            log.error("Invalid signature in visa token", e);
+        } catch (JsonSyntaxException e) {
+            log.error("Invalid JSON syntax in visa claim", e);
+        } catch (Exception e) {
+            log.error("Error parsing or verifying visa token", e);
         }
         return Optional.empty();
     }
@@ -179,17 +189,20 @@ public enum Clearinghouse {
 
         try {
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             var jwksURL = gson.fromJson(body.string(), JsonObject.class).get(JWKS_URI).getAsString();
-            var decodedToken = JWT.decode(accessToken);
-            var keyId = decodedToken.getKeyId();
+            var tokenArray = accessToken.split("[.]");
+            var token = tokenArray[0] + "."  + tokenArray[1] + ".";
+            var decodedToken = Jwts.parserBuilder().build().parseClaimsJwt(token);
+            var keyId = decodedToken.getHeader().get("kid").toString();
             var jwk = JWKProvider.INSTANCE.get(jwksURL, keyId);
 
             return getVisaTokensWithPublicKey(accessToken, (RSAPublicKey) jwk.getPublicKey());
-        } catch (InvalidPublicKeyException e) {
-            log.error(e.getMessage(), e);
-            return Collections.emptyList();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 
@@ -218,24 +231,38 @@ public enum Clearinghouse {
      * @param publicKey   RSA public key.
      * @return List of visa JWT tokens.
      */
-    @SuppressWarnings("unchecked")
     public Collection<String> getVisaTokensWithPublicKey(String accessToken, RSAPublicKey publicKey) {
-        var verifier = JWT.require(Algorithm.RSA256(publicKey, null)).build();
-        var issuer = verifier.verify(accessToken).getIssuer();
-        var userInfoEndpoint = issuer + USERINFO;
-        Request request = new Request.Builder()
-                .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
-                .url(userInfoEndpoint)
-                .get()
-                .build();
-
         try {
+            byte[] encoded = publicKey.getEncoded();
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+            Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(accessToken);
+            String userInfoEndpoint = jws.getBody().getIssuer() + USERINFO;
+            Request request = new Request.Builder()
+                    .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
+                    .url(userInfoEndpoint)
+                    .get()
+                    .build();
+
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
+
             return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
+
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (SignatureException e) {
+            log.error("Invalid signature in visa token", e);
+        } catch (JsonSyntaxException e) {
+            log.error("Invalid JSON syntax in visa claim", e);
+        } catch (Exception e) {
+            log.error("Error parsing or verifying visa token", e);
         }
+
+        return Collections.emptyList();
     }
 
     /**
@@ -245,7 +272,6 @@ public enum Clearinghouse {
      * @param userInfoEndpoint "/userinfo" endpoint URL.
      * @return List of visa JWT tokens.
      */
-    @SuppressWarnings("unchecked")
     public Collection<String> getVisaTokensFromOpaqueToken(String accessToken, String userInfoEndpoint) {
         Request request = new Request.Builder()
                 .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
@@ -255,6 +281,7 @@ public enum Clearinghouse {
 
         try {
             ResponseBody body = client.newCall(request).execute().body();
+            assert body != null;
             var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
             return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
         } catch (IOException e) {
