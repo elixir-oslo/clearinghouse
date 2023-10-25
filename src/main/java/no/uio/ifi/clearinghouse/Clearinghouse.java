@@ -110,7 +110,7 @@ public enum Clearinghouse {
      */
     public Optional<Visa> getVisa(String visaToken) {
         var tokenArray = visaToken.split("[.]");
-        var token = tokenArray[0] + "."  + tokenArray[1] + ".";
+        var token = tokenArray[0] + "." + tokenArray[1] + ".";
         var jwt = Jwts.parserBuilder().build().parseClaimsJwt(token);
         var jku = jwt.getHeader().get(JKU).toString();
         var keyId = jwt.getHeader().get("kid").toString();
@@ -190,9 +190,10 @@ public enum Clearinghouse {
         try {
             ResponseBody body = client.newCall(request).execute().body();
             assert body != null;
-            var jwksURL = gson.fromJson(body.string(), JsonObject.class).get(JWKS_URI).getAsString();
+            String bodyString = body.string();
+            var jwksURL = gson.fromJson(bodyString, JsonObject.class).get(JWKS_URI).getAsString();
             var tokenArray = accessToken.split("[.]");
-            var token = tokenArray[0] + "."  + tokenArray[1] + ".";
+            var token = tokenArray[0] + "." + tokenArray[1] + ".";
             var decodedToken = Jwts.parserBuilder().build().parseClaimsJwt(token);
             var keyId = decodedToken.getHeader().get("kid").toString();
             var jwk = JWKProvider.INSTANCE.get(jwksURL, keyId);
@@ -241,14 +242,15 @@ public enum Clearinghouse {
             Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(accessToken);
             String userInfoEndpoint = jws.getBody().getIssuer() + USERINFO;
             Request request = new Request.Builder()
-                    .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
+                    .header(AUTHORIZATION, BEARER + accessToken)
                     .url(userInfoEndpoint)
                     .get()
                     .build();
 
             ResponseBody body = client.newCall(request).execute().body();
             assert body != null;
-            var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
+            String bodyString = body.string();
+            var passport = gson.fromJson(bodyString, JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
 
             return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
 
@@ -274,7 +276,7 @@ public enum Clearinghouse {
      */
     public Collection<String> getVisaTokensFromOpaqueToken(String accessToken, String userInfoEndpoint) {
         Request request = new Request.Builder()
-                .header(AUTHORIZATION, ByteString.encodeUtf8(BEARER + accessToken).base64())
+                .header(AUTHORIZATION, BEARER + accessToken)
                 .url(userInfoEndpoint)
                 .get()
                 .build();
@@ -282,7 +284,8 @@ public enum Clearinghouse {
         try {
             ResponseBody body = client.newCall(request).execute().body();
             assert body != null;
-            var passport = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
+            String bodyString = body.string();
+            var passport = gson.fromJson(bodyString, JsonObject.class).getAsJsonArray(GA_4_GH_PASSPORT_V_1);
             return passport.asList().stream().map(x -> x.toString().replaceAll("\"", "")).toList();
         } catch (IOException e) {
             throw new RuntimeException(e);
