@@ -66,7 +66,8 @@ public enum JWKProvider {
         try {
             ResponseBody body = client.newCall(request).execute().body();
             assert body != null;
-            keysArray = gson.fromJson(body.string(), JsonObject.class).getAsJsonArray(KEYS);
+            String bodyString = body.string();
+            keysArray = gson.fromJson(bodyString, JsonObject.class).getAsJsonArray(KEYS);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
