@@ -1,7 +1,7 @@
 package no.uio.ifi.clearinghouse;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.SignatureAlgorithm;
 import no.uio.ifi.clearinghouse.model.Visa;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -39,19 +39,17 @@ public class CredentialsProvider {
         this.jwkJsonString = createJwkJsonString();
     }
 
-    private String createAccessToken (String url) {
-        return Jwts.builder()
-                .setHeaderParam("kid", "rsa1")
-                .setHeaderParam("alg", "RS256")
-                .setSubject("test@elixir-europe.org")
-                .setAudience("e84ce6d6-a136-4654-8128-14f034ea24f7")
-                .claim("azp", "e84ce6d6-a136-4654-8128-14f034ea24f7")
-                .claim("scope", "ga4gh_passport_v1 openid")
-                .setIssuer(url)
-                .setExpiration(new Date(32503680000000L))
-                .setIssuedAt(new Date())
-                .setId("03f5ca99-8df5-4d64-9dcb-7bf7701fe257")
-                .signWith(this.privateKey, SignatureAlgorithm.RS256)
+    private String createAccessToken(String url) {
+        SignatureAlgorithm alg = Jwts.SIG.RS512;
+        return Jwts.builder().header().keyId("rsa1").add("alg", "RS256").and()
+                .signWith(this.privateKey, alg)
+                .subject("test@elixir-europe.org")
+                .claim("azp", "e84ce6d6-a136-4654-8128-14f034ea24f7").claim("scope", "ga4gh_passport_v1 openid")
+                .audience().add("e84ce6d6-a136-4654-8128-14f034ea24f7").and()
+                .issuer(url)
+                .expiration(new Date(32503680000000L))
+                .issuedAt(new Date())
+                .id("03f5ca99-8df5-4d64-9dcb-7bf7701fe257")
                 .compact();
     }
 
@@ -62,18 +60,16 @@ public class CredentialsProvider {
         visa.setAsserted(1583757401L);
         visa.setSource("https://login.elixir-czech.org/google-idp/");
         visa.setValue("affiliate@google.com");
-        return Jwts.builder()
-                .setHeaderParam("jku", url + "jwk")
-                .setHeaderParam("kid", "rsa1")
-                .setHeaderParam("typ", "JWT")
-                .setHeaderParam("alg", "RS256")
-                .setSubject("test@elixir-europe.org")
+
+        SignatureAlgorithm alg = Jwts.SIG.RS512;
+        return Jwts.builder().header().keyId("rsa1").type("JWT").add("jku", url + "jwk").add("alg", "RS256").and()
+                .signWith(this.privateKey, alg)
+                .subject("test@elixir-europe.org")
                 .claim("ga4gh_visa_v1", visa)
-                .setIssuer(url)
-                .setExpiration(new Date(32503680000000L))
-                .setIssuedAt(new Date())
-                .setId("f520d56f-e51a-431c-94e1-2a3f9da8b0c9")
-                .signWith(this.privateKey, SignatureAlgorithm.RS256)
+                .issuer(url)
+                .expiration(new Date(32503680000000L))
+                .issuedAt(new Date())
+                .id("f520d56f-e51a-431c-94e1-2a3f9da8b0c9")
                 .compact();
     }
 
@@ -127,7 +123,7 @@ public class CredentialsProvider {
                 "  \"keys\": [\n" +
                 "    {\n" +
                 "      \"kty\": \"RSA\",\n" +
-                "      \"e\":"+ publicKey.getPublicExponent().toString(16) +",\n" +
+                "      \"e\":" + publicKey.getPublicExponent().toString(16) + ",\n" +
                 "      \"kid\": \"rsa1\",\n" +
                 "      \"n\": \"" + publicKey.getModulus().toString(16) + "\"\n" +
                 "    }\n" +
@@ -145,7 +141,7 @@ public class CredentialsProvider {
     }
 
     public String getVisaToken() {
-        return this.visaToken + "\n";
+        return this.visaToken;
     }
 
     public String getPassportJsonString() {

@@ -100,7 +100,6 @@ public class ClearinghouseTests {
         Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
         Assert.assertNull(visa.getConditions());
         Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
-
     }
 
     @SneakyThrows
@@ -153,7 +152,7 @@ public class ClearinghouseTests {
     public void getVisaTokensTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, oidcConfigEndpoint.toString());
         Assert.assertEquals(1, visaTokens.size());
-        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+        Assert.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @SneakyThrows
@@ -161,7 +160,7 @@ public class ClearinghouseTests {
     public void getVisaTokensWithPEMPublicKeyTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPEMPublicKey(accessToken, publicKey);
         Assert.assertEquals(1, visaTokens.size());
-        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+        Assert.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @SneakyThrows
@@ -169,14 +168,14 @@ public class ClearinghouseTests {
     public void getVisaTokensFromOpaqueTokenTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensFromOpaqueToken(accessToken, userInfoEndpoint.toString());
         Assert.assertEquals(1, visaTokens.size());
-        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+        Assert.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @Test
     public void getVisaTokensWithPublicKeyTest() {
         RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
         var visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPublicKey(accessToken, publicKey);
-        Assert.assertEquals(visaToken, visaTokens.iterator().next() + "\n");
+        Assert.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @Test
@@ -193,5 +192,4 @@ public class ClearinghouseTests {
         Assert.assertNull(visa.getConditions());
         Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
-
 }

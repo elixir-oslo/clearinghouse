@@ -12,7 +12,6 @@ import no.uio.ifi.clearinghouse.model.Visa;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
-import okio.ByteString;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -20,7 +19,10 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.*;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +43,7 @@ public enum Clearinghouse {
     private static final String USERINFO = "userinfo";
     private static final String AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer ";
-
+    private static final String KID = "kid";
     private final OkHttpClient client = new OkHttpClient();
 
     private final Gson gson = new Gson();
@@ -109,11 +111,8 @@ public enum Clearinghouse {
      * @return Optional <code>Visa</code> POJO: present if token validated successfully.
      */
     public Optional<Visa> getVisa(String visaToken) {
-        var tokenArray = visaToken.split("[.]");
-        var token = tokenArray[0] + "." + tokenArray[1] + ".";
-        var jwt = Jwts.parserBuilder().build().parseClaimsJwt(token);
-        var jku = jwt.getHeader().get(JKU).toString();
-        var keyId = jwt.getHeader().get("kid").toString();
+        var jku = getHeaderItemValue(visaToken, JKU);
+        var keyId = getHeaderItemValue(visaToken, KID);
         var jwk = JWKProvider.INSTANCE.get(jku, keyId);
         try {
             return getVisaWithPublicKey(visaToken, (RSAPublicKey) jwk.getPublicKey());
@@ -155,7 +154,7 @@ public enum Clearinghouse {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey pubKey = keyFactory.generatePublic(keySpec);
 
-            Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(visaToken);
+            Jws<Claims> jws = Jwts.parser().setSigningKey(pubKey).build().parseSignedClaims(visaToken);
             Claims claims = jws.getBody();
             if (claims.containsKey(GA_4_GH_VISA_V_1)) {
                 String visaJson = new Gson().toJson(claims.get(GA_4_GH_VISA_V_1));
@@ -192,10 +191,8 @@ public enum Clearinghouse {
             assert body != null;
             String bodyString = body.string();
             var jwksURL = gson.fromJson(bodyString, JsonObject.class).get(JWKS_URI).getAsString();
-            var tokenArray = accessToken.split("[.]");
-            var token = tokenArray[0] + "." + tokenArray[1] + ".";
-            var decodedToken = Jwts.parserBuilder().build().parseClaimsJwt(token);
-            var keyId = decodedToken.getHeader().get("kid").toString();
+
+            var keyId = getHeaderItemValue(accessToken, KID);
             var jwk = JWKProvider.INSTANCE.get(jwksURL, keyId);
 
             return getVisaTokensWithPublicKey(accessToken, (RSAPublicKey) jwk.getPublicKey());
@@ -239,7 +236,7 @@ public enum Clearinghouse {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey pubKey = keyFactory.generatePublic(keySpec);
 
-            Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(pubKey).build().parseClaimsJws(accessToken);
+            Jws<Claims> jws = Jwts.parser().setSigningKey(pubKey).build().parseSignedClaims(accessToken);
             String userInfoEndpoint = jws.getBody().getIssuer() + USERINFO;
             Request request = new Request.Builder()
                     .header(AUTHORIZATION, BEARER + accessToken)
@@ -299,4 +296,10 @@ public enum Clearinghouse {
         return (RSAPublicKey) keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
     }
 
+    private String getHeaderItemValue(String token, String key) {
+        var tokenArray = token.split("[.]");
+        byte[] decodedHeader = Base64.getUrlDecoder().decode(tokenArray[0]);
+        String decodedHeaderString = new String(decodedHeader);
+        return gson.fromJson(decodedHeaderString, JsonObject.class).get(key).getAsString();
+    }
 }
