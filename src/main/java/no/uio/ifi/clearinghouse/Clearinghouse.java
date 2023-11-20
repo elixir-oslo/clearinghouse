@@ -154,7 +154,7 @@ public enum Clearinghouse {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey pubKey = keyFactory.generatePublic(keySpec);
 
-            Jws<Claims> jws = Jwts.parser().setSigningKey(pubKey).build().parseSignedClaims(visaToken);
+            Jws<Claims> jws = Jwts.parser().verifyWith(pubKey).build().parseSignedClaims(visaToken);
             Claims claims = jws.getBody();
             if (claims.containsKey(GA_4_GH_VISA_V_1)) {
                 String visaJson = new Gson().toJson(claims.get(GA_4_GH_VISA_V_1));
@@ -236,7 +236,7 @@ public enum Clearinghouse {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey pubKey = keyFactory.generatePublic(keySpec);
 
-            Jws<Claims> jws = Jwts.parser().setSigningKey(pubKey).build().parseSignedClaims(accessToken);
+            Jws<Claims> jws = Jwts.parser().verifyWith(pubKey).build().parseSignedClaims(accessToken);
             String userInfoEndpoint = jws.getBody().getIssuer() + USERINFO;
             Request request = new Request.Builder()
                     .header(AUTHORIZATION, BEARER + accessToken)
