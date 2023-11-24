@@ -43,8 +43,10 @@ jobs:
         uses: github/codeql-action/analyze@v2
         with:
           output: 'results.sarif'
-
+          category: 'analyze-category'
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'results.sarif'
+          category: 'upload-category'
+
