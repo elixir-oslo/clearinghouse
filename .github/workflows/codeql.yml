@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Download .sarif artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: codeql-results
           path: codeql-results
