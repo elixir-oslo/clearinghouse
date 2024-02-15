@@ -12,7 +12,7 @@ To include this library to your Maven project add following to the `pom.xml`:
 
     <dependencies>
         <dependency>
-            <groupId>no.uio.ifi</groupId>
+            <groupId>no.elixir</groupId>
             <artifactId>clearinghouse</artifactId>
             <version>VERSION</version>
         </dependency>
