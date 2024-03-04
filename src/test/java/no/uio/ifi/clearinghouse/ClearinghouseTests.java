@@ -10,12 +10,9 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +20,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Collection;
 import java.util.Optional;
 
-@RunWith(JUnit4.class)
+
 public class ClearinghouseTests {
 
     private MockWebServer mockWebServer;
@@ -36,7 +33,7 @@ public class ClearinghouseTests {
     private HttpUrl oidcConfigEndpoint;
 
     @SneakyThrows
-    @Before
+    @BeforeEach
     public void init() {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
@@ -81,7 +78,7 @@ public class ClearinghouseTests {
         mockWebServer.setDispatcher(dispatcher);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         mockWebServer.shutdown();
     }
@@ -91,105 +88,105 @@ public class ClearinghouseTests {
     @Test
     public void getVisasTest() {
         Collection<Visa> visas = Clearinghouse.INSTANCE.getVisas(accessToken, oidcConfigEndpoint.toString());
-        Assert.assertEquals(1, visas.size());
+        Assertions.assertEquals(1, visas.size());
         Visa visa = visas.iterator().next();
-        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-        Assert.assertEquals("affiliate@google.com", visa.getValue());
-        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-        Assert.assertNull(visa.getConditions());
-        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+        Assertions.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assertions.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assertions.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assertions.assertEquals("affiliate@google.com", visa.getValue());
+        Assertions.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assertions.assertNull(visa.getConditions());
+        Assertions.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 
     @SneakyThrows
     @Test
     public void getVisasWithPEMPublicKeyTestTest() {
         Collection<Visa> visas = Clearinghouse.INSTANCE.getVisasWithPEMPublicKey(accessToken, publicKey);
-        Assert.assertEquals(1, visas.size());
+        Assertions.assertEquals(1, visas.size());
         Visa visa = visas.iterator().next();
-        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-        Assert.assertEquals("affiliate@google.com", visa.getValue());
-        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-        Assert.assertNull(visa.getConditions());
-        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+        Assertions.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assertions.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assertions.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assertions.assertEquals("affiliate@google.com", visa.getValue());
+        Assertions.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assertions.assertNull(visa.getConditions());
+        Assertions.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 
     @SneakyThrows
     @Test
     public void getVisaTest() {
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisa(visaToken);
-        Assert.assertTrue(optionalVisa.isPresent());
+        Assertions.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
-        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-        Assert.assertEquals("affiliate@google.com", visa.getValue());
-        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-        Assert.assertNull(visa.getConditions());
-        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+        Assertions.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assertions.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assertions.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assertions.assertEquals("affiliate@google.com", visa.getValue());
+        Assertions.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assertions.assertNull(visa.getConditions());
+        Assertions.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 
     @SneakyThrows
     @Test
     public void getVisaWithPEMPublicKeyTest() {
         Optional<Visa> optionalVisa = Clearinghouse.INSTANCE.getVisaWithPEMPublicKey(visaToken, publicKey);
-        Assert.assertTrue(optionalVisa.isPresent());
+        Assertions.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
-        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-        Assert.assertEquals("affiliate@google.com", visa.getValue());
-        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-        Assert.assertNull(visa.getConditions());
-        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+        Assertions.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assertions.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assertions.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assertions.assertEquals("affiliate@google.com", visa.getValue());
+        Assertions.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assertions.assertNull(visa.getConditions());
+        Assertions.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 
     @SneakyThrows
     @Test
     public void getVisaTokensTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokens(accessToken, oidcConfigEndpoint.toString());
-        Assert.assertEquals(1, visaTokens.size());
-        Assert.assertEquals(visaToken, visaTokens.iterator().next());
+        Assertions.assertEquals(1, visaTokens.size());
+        Assertions.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @SneakyThrows
     @Test
     public void getVisaTokensWithPEMPublicKeyTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPEMPublicKey(accessToken, publicKey);
-        Assert.assertEquals(1, visaTokens.size());
-        Assert.assertEquals(visaToken, visaTokens.iterator().next());
+        Assertions.assertEquals(1, visaTokens.size());
+        Assertions.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @SneakyThrows
     @Test
     public void getVisaTokensFromOpaqueTokenTest() {
         Collection<String> visaTokens = Clearinghouse.INSTANCE.getVisaTokensFromOpaqueToken(accessToken, userInfoEndpoint.toString());
-        Assert.assertEquals(1, visaTokens.size());
-        Assert.assertEquals(visaToken, visaTokens.iterator().next());
+        Assertions.assertEquals(1, visaTokens.size());
+        Assertions.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @Test
     public void getVisaTokensWithPublicKeyTest() {
         RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
         var visaTokens = Clearinghouse.INSTANCE.getVisaTokensWithPublicKey(accessToken, publicKey);
-        Assert.assertEquals(visaToken, visaTokens.iterator().next());
+        Assertions.assertEquals(visaToken, visaTokens.iterator().next());
     }
 
     @Test
     public void getVisaWithPublicKeyTest() {
         RSAPublicKey publicKey = (RSAPublicKey) credentialsProvider.getPublicKey();
         var optionalVisa = Clearinghouse.INSTANCE.getVisaWithPublicKey(visaToken, publicKey);
-        Assert.assertTrue(optionalVisa.isPresent());
+        Assertions.assertTrue(optionalVisa.isPresent());
         Visa visa = optionalVisa.get();
-        Assert.assertEquals("test@elixir-europe.org", visa.getSub());
-        Assert.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
-        Assert.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
-        Assert.assertEquals("affiliate@google.com", visa.getValue());
-        Assert.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
-        Assert.assertNull(visa.getConditions());
-        Assert.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
+        Assertions.assertEquals("test@elixir-europe.org", visa.getSub());
+        Assertions.assertEquals(VisaType.AffiliationAndRole.name(), visa.getType());
+        Assertions.assertEquals(Long.valueOf(1583757401), visa.getAsserted());
+        Assertions.assertEquals("affiliate@google.com", visa.getValue());
+        Assertions.assertEquals("https://login.elixir-czech.org/google-idp/", visa.getSource());
+        Assertions.assertNull(visa.getConditions());
+        Assertions.assertEquals(ByValue.SYSTEM.name().toLowerCase(), visa.getBy());
     }
 }
