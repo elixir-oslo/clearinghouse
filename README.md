@@ -1,3 +1,8 @@
+# Notice:
+# The work in this repo is continued in a new mono repo here: https://github.com/ELIXIR-NO/FEGA-Norway
+
+# Direct link inside mono repo: https://github.com/ELIXIR-NO/FEGA-Norway/tree/main/lib/clearinghouse
+
 # clearinghouse
 [![Build Status](https://github.com/elixir-oslo/clearinghouse/workflows/Java%20CI/badge.svg)](https://github.com/elixir-oslo/clearinghouse/actions)
 [![CodeFactor](https://www.codefactor.io/repository/github/elixir-oslo/clearinghouse/badge)](https://www.codefactor.io/repository/github/elixir-oslo/clearinghouse)
